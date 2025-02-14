@@ -3,7 +3,7 @@
 #include <signal.h>
 #include <time.h>
 #include "driver/elevio.h"
-
+#include "Timer.h"
 
 
 int main(){
@@ -13,10 +13,15 @@ int main(){
     printf("Press the stop button on the elevator panel to exit\n");
 
     elevio_motorDirection(DIRN_UP);
+    Timer timer;
+    initTimer(&timer);
 
     while(1){
         int floor = elevio_floorSensor();
-
+        if (getTimePassed(&timer) >= 3){
+            printf("3s passed\n");
+            startTimer(&timer);
+        } 
         if(floor == 0){
             elevio_motorDirection(DIRN_UP);
         }
