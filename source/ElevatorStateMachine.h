@@ -16,7 +16,16 @@ typedef struct{
     int lastFloor;
     int doorOpen;
     
-} ElevetorStateMachine;
+} ElevatorStateMachine;
 
 //"Member functions"
-void setLastFloor(ElevetorStateMachine* stateMachine, int floor);
+void setState(ElevatorStateMachine* stateMachine, State state);
+void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir);
+
+void setLastFloor(ElevatorStateMachine* stateMachine, int floor);
+void setDoorOpen(ElevatorStateMachine* stateMachine, int open);
+
+State getState(ElevatorStateMachine* stateMachine);
+MotorDirection getDir(ElevatorStateMachine* stateMachine);
+int getLastFloor(ElevatorStateMachine* stateMachine);
+int getDoorOpen(ElevatorStateMachine* stateMachine);
