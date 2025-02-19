@@ -32,4 +32,3 @@ $(OBJECTDIR)/%.o: $(SOURCEDIR)/%.c
 
 	
 .PHONY: all rebuild clean
-

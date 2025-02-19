@@ -21,7 +21,7 @@ int main(){
         if (getTimePassed(&timer) >= 3){
             printf("3s passed\n");
             startTimer(&timer);
-        } 
+        }  
         if(floor == 0){
             elevio_motorDirection(DIRN_UP);
         }
