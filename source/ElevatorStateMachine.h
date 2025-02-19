@@ -1,24 +1,22 @@
+#include "driver/elevio.h"
 
 //Declaration of enums
 typedef enum{
-    WAIT,
     MOVING,
-    STOP
+    IDLE,
 } State;
 
-typedef enum{
-    UP,
-    DOWN
-} Direction;
 
 //State machine class
 typedef struct{
     State state;
-    Direction dir;
-    int pos;
+    MotorDirection dir;
 
-    bool doorOpen;
+
+    int lastFloor;
+    int doorOpen;
     
 } ElevetorStateMachine;
 
 //"Member functions"
+void setLastFloor(ElevetorStateMachine* stateMachine, int floor);
