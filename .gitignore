@@ -1,3 +1,7 @@
 .vscode/
 build/
+<<<<<<< HEAD
 .DS_Store
+=======
+elevator
+>>>>>>> 64093112aa7f9532db7a6bdb57afd8f0626cc3d6
