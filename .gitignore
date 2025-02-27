@@ -1,7 +1,10 @@
 .vscode/
 build/
-<<<<<<< HEAD
 .DS_Store
-=======
+*.go
+*.mod
+*.js
+*.css
+*.html
 elevator
->>>>>>> 64093112aa7f9532db7a6bdb57afd8f0626cc3d6
+simulator-v3
