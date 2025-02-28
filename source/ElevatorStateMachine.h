@@ -18,6 +18,9 @@ typedef struct{
     
 } ElevatorStateMachine;
 
+
+void initElevatorStateMachine(ElevatorStateMachine* stateMachine);
+void updateLastFloor(ElevatorStateMachine* stateMachine);
 //"Member functions"
 void setState(ElevatorStateMachine* stateMachine, State state);
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir);

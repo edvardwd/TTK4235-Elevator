@@ -4,8 +4,66 @@
 #include <time.h>
 #include "driver/elevio.h"
 #include "Timer.h"
+#include "Elevator.h"
 
 
+int main(){
+    elevio_init();
+    
+    printf("=== Example Program ===\n");
+    printf("Press the stop button on the elevator panel to exit\n");
+
+    elevio_motorDirection(DIRN_UP);
+    Timer timer;
+    initTimer(&timer);
+
+    Elevator elevator;
+    initElevator(&elevator);
+
+    printOrders(&elevator);
+    while(1){
+        updateLastFloor(&elevator.stateMachine);
+        checkForOrders(&elevator);
+        updateQueue(&elevator);
+        int floor = elevator.stateMachine.lastFloor;
+        //int floor = elevio_floorSensor();
+
+        if(floor == 0){
+            elevio_motorDirection(DIRN_UP);
+            elevator.stateMachine.dir = DIRN_UP;
+        }
+
+        if(floor == N_FLOORS-1){
+            elevio_motorDirection(DIRN_DOWN);
+            elevator.stateMachine.dir = DIRN_DOWN;
+        }
+
+
+        if(elevio_stopButton()){
+            elevio_motorDirection(DIRN_STOP);
+            elevator.stateMachine.dir = DIRN_STOP;
+            break;
+        }
+        
+        nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
+    }
+
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 int main() {
     elevio_init();
 
@@ -63,6 +121,7 @@ int main() {
 
     return 0;
 }
+*/
 
 
 
