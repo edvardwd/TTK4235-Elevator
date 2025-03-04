@@ -1,3 +1,6 @@
+#ifndef ELEVATOR_H
+#define ELEVATOR_H
+
 #include "ElevatorStateMachine.h"
 #include "stdlib.h"
 #include "stdio.h"
@@ -9,13 +12,25 @@ typedef struct{
     int* queue[N_FLOORS];
 
     int orders[N_FLOORS][N_BUTTONS];
+
 } Elevator;
 
 
 void initElevator(Elevator* elevator);
 void checkForOrders(Elevator* elevator);
+void clearOrders(Elevator* elevator, int all);
 void orderQueue(Elevator* elevator);
 void updateQueue(Elevator* elevator);
+
+int queueIsEmpty(Elevator* elevator);
+int compareUp(int a, int b, int currentFloor);
+int compareDown(int a, int b, int currentFloor);
+
+
 void updateLights(Elevator* elevator);
 void printOrders(Elevator* elevator);
 void printQueue(Elevator* elevator);
+
+void destroyElevator(Elevator* elevator); 
+
+#endif

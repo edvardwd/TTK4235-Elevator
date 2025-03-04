@@ -1,3 +1,5 @@
+#ifndef ELEVATORSTATEMACHINE_H
+#define ELEVATORSTATEMACHINE_H
 #include "driver/elevio.h"
 
 //Declaration of enums
@@ -13,7 +15,7 @@ typedef struct{
     MotorDirection dir;
 
 
-    int lastFloor;
+    int lastFloor;  
     int doorOpen;
     
 } ElevatorStateMachine;
@@ -32,3 +34,5 @@ State getState(ElevatorStateMachine* stateMachine);
 MotorDirection getDir(ElevatorStateMachine* stateMachine);
 int getLastFloor(ElevatorStateMachine* stateMachine);
 int getDoorOpen(ElevatorStateMachine* stateMachine);
+
+#endif

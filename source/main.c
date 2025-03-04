@@ -8,25 +8,34 @@
 
 
 int main(){
-    elevio_init();
+    //elevio_init();
     
     printf("=== Example Program ===\n");
     printf("Press the stop button on the elevator panel to exit\n");
+    
+    Elevator elevator;
+    initElevator(&elevator);
 
     elevio_motorDirection(DIRN_UP);
     Timer timer;
     initTimer(&timer);
 
-    Elevator elevator;
-    initElevator(&elevator);
+    
 
     printOrders(&elevator);
     while(1){
         updateLastFloor(&elevator.stateMachine);
         checkForOrders(&elevator);
         updateQueue(&elevator);
-        int floor = elevator.stateMachine.lastFloor;
-        //int floor = elevio_floorSensor();
+        orderQueue(&elevator);
+        //int floor = elevator.stateMachine.lastFloor;
+        int floor = elevio_floorSensor();
+        int nextInQueue = *elevator.queue[0];
+
+        if (floor == nextInQueue && floor != -1){
+            clearOrders(&elevator, 0);
+            printf("Queue cleared\n");
+        }
 
         if(floor == 0){
             elevio_motorDirection(DIRN_UP);
@@ -37,7 +46,14 @@ int main(){
             elevio_motorDirection(DIRN_DOWN);
             elevator.stateMachine.dir = DIRN_DOWN;
         }
-
+        /*
+        if (floor == 2 && *elevator.fixedFloors[2] == 2 && elevio_floorSensor() == 2){
+            printf("Reached floor: %d\n", floor);
+            setDir(&elevator.stateMachine, DIRN_STOP);
+            clearOrders(&elevator, 0);
+            break;
+        }
+            */
 
         if(elevio_stopButton()){
             elevio_motorDirection(DIRN_STOP);
@@ -48,7 +64,7 @@ int main(){
         nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
     }
 
-
+    destroyElevator(&elevator);
     return 0;
 }
 

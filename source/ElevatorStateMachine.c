@@ -21,6 +21,10 @@ void setState(ElevatorStateMachine* stateMachine, State state){
 
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir){
     stateMachine->dir = dir;
+    elevio_motorDirection(dir);
+
+    if (dir == DIRN_STOP) setState(stateMachine, IDLE);
+    else setState(stateMachine, MOVING);
 }
 
 void setLastFloor(ElevatorStateMachine* stateMachine, int floor){
