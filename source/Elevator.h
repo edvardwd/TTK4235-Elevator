@@ -1,3 +1,4 @@
+#include "driver/elevio.h"
 #include "ElevatorStateMachine.h"
 #include "stdlib.h"
 #include "stdio.h"
@@ -17,5 +18,10 @@ void checkForOrders(Elevator* elevator);
 void orderQueue(Elevator* elevator);
 void updateQueue(Elevator* elevator);
 void updateLights(Elevator* elevator);
+void stopButton (Elevator* elevator);
+void doorLight (Elevator* elevator);
+void buttonLights (Elevator* elevator);
+
+
 void printOrders(Elevator* elevator);
 void printQueue(Elevator* elevator);
