@@ -32,5 +32,11 @@ void printOrders(Elevator* elevator);
 void printQueue(Elevator* elevator);
 
 void destroyElevator(Elevator* elevator); 
+void updateState(Elevator* elevator);
+
+
+void elevatorMainLoop(Elevator* elevator);
+
+
 
 #endif

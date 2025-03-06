@@ -202,3 +202,92 @@ void destroyElevator(Elevator *elevator){ //destructor
     }
     printf("Elevator successfully destroyed.\n");
 }
+
+
+
+void updateState(Elevator* elevator){
+    ElevatorStateMachine* stateMachine = &elevator->stateMachine;
+    int nextFloor = *elevator->queue[0];
+    char* stateStr = getStateAsStr(elevator->stateMachine.state);
+    printf("Current state is %s\n", stateStr);
+    switch (stateMachine->state)
+    {
+
+    case IDLE:
+        if (elevio_stopButton()){
+            stateMachine->state = EMERGENCY_STOP;
+            setDir(&elevator->stateMachine, DIRN_STOP);
+            clearOrders(elevator, 1); //clear all orders
+            break;
+        }
+        if (nextFloor == -1) break;
+
+        if (nextFloor > stateMachine->lastFloor){
+            setDir(stateMachine, DIRN_UP);
+            stateMachine->state = MOVING;
+
+        } else if (nextFloor < stateMachine->lastFloor){
+            setDir(stateMachine, DIRN_DOWN);
+            stateMachine->state = MOVING;
+        } else{
+            clearOrders(elevator, 0); //remove floor from queue and orders
+        }
+        
+        break;
+
+    case MOVING:
+        if (elevio_stopButton()){
+            stateMachine->state = EMERGENCY_STOP;
+            setDir(&elevator->stateMachine, DIRN_STOP);
+            clearOrders(elevator, 1); //clear all orders
+            break;
+        }
+        int floor = elevio_floorSensor();
+        if (floor != -1 && floor == nextFloor){
+            clearOrders(elevator, 0); //remove floor from queue and orders
+            setDir(stateMachine, DIRN_STOP);
+            stateMachine->state = DOOR_OPEN;
+            startTimer(&stateMachine->timer);
+        }
+        break;
+
+    case EMERGENCY_STOP:
+        if (!elevio_stopButton()){
+            stateMachine->state = IDLE;
+        }
+        break;
+
+    case DOOR_OPEN:
+        if (elevio_stopButton()){
+            startTimer(&stateMachine->timer); //reset timer to wait 3 more secs
+            clearOrders(elevator, 1); //clear all orders
+        }
+        if (elevio_obstruction()){
+            startTimer(&stateMachine->timer); //reset the timer to wait 3 more secs if obstruction sensor is high
+        }
+
+        if (getTimePassed(&stateMachine->timer) >= 3){
+            stateMachine->state = IDLE;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+
+void elevatorMainLoop(Elevator* elevator){
+    while (1){
+        if (elevio_stopButton() && elevio_obstruction()) break; //way to stop the simulator
+
+        updateState(elevator);
+
+        updateLastFloor(&elevator->stateMachine);
+        checkForOrders(elevator);
+        updateQueue(elevator);
+        orderQueue(elevator);
+
+
+        nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
+    }
+}
