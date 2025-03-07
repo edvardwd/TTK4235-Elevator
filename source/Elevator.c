@@ -178,8 +178,8 @@ void orderQueue(Elevator* elevator){
         }
         if (!swapped) break;
     }
-    printf("Queue ordered.\nCurrent floor = %d, direction = %d\n", elevator->stateMachine.lastFloor, elevator->stateMachine.dir);
-    printQueue(elevator);
+    //printf("Queue ordered.\nCurrent floor = %d, direction = %d\n", elevator->stateMachine.lastFloor, elevator->stateMachine.dir);
+    //printQueue(elevator);
 
 }
 
@@ -209,11 +209,13 @@ void updateState(Elevator* elevator){
     ElevatorStateMachine* stateMachine = &elevator->stateMachine;
     int nextFloor = *elevator->queue[0];
     char* stateStr = getStateAsStr(elevator->stateMachine.state);
-    printf("Current state is %s\n", stateStr);
+    //printf("Current state is %s\n", stateStr);
     switch (stateMachine->state)
     {
 
     case IDLE:
+        printOrders(elevator);
+        printQueue(elevator);
         if (elevio_stopButton()){
             stateMachine->state = EMERGENCY_STOP;
             setDir(&elevator->stateMachine, DIRN_STOP);
@@ -244,7 +246,6 @@ void updateState(Elevator* elevator){
         }
         int floor = elevio_floorSensor();
         if (floor != -1 && floor == nextFloor){
-            clearOrders(elevator, 0); //remove floor from queue and orders
             setDir(stateMachine, DIRN_STOP);
             stateMachine->state = DOOR_OPEN;
             startTimer(&stateMachine->timer);
@@ -262,6 +263,7 @@ void updateState(Elevator* elevator){
             startTimer(&stateMachine->timer); //reset timer to wait 3 more secs
             clearOrders(elevator, 1); //clear all orders
         }
+        clearOrders(elevator, 0); //remove floor from queue and orders
         if (elevio_obstruction()){
             startTimer(&stateMachine->timer); //reset the timer to wait 3 more secs if obstruction sensor is high
         }
