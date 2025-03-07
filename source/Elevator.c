@@ -184,7 +184,45 @@ void orderQueue(Elevator* elevator){
 }
 
 
-void updateLights(Elevator* elevator);
+void updateLights(Elevator* elevator){ //Turns on correct floor lamp
+    if (elevio_floorSensor() != -1){
+        elevio_floorIndicator(elevator->stateMachine.lastFloor);
+    } else {
+        elevio_floorIndicator(elevator->stateMachine.lastFloor);
+    }
+}
+
+void stopButton(Elevator* elevator){
+    if (elevio_stopButton()) {
+        elevio_stopLamp(1);
+        // Clear all orders when stop is pressed
+        for (int i = 0; i < N_FLOORS; i++) {
+            for (int j = 0; j < N_BUTTONS; j++) {
+                elevator->orders[i][j] = 0;
+            }
+        }
+    } else {
+        elevio_stopLamp(0);
+    }
+}
+
+void doorLight(Elevator* elevator){ //Turns on door light when door is open
+    elevio_doorOpenLamp(elevator->stateMachine.doorOpen);
+}
+
+void buttonLights (Elevator* elevator){ 
+    for (int floor = 0; floor < N_FLOORS; floor++) {
+        for (int button = 0; button < N_BUTTONS; button++) {
+            // Skip invalid buttons at top and bottom floors
+            if ((floor == 0 && button == BUTTON_HALL_DOWN) || 
+                (floor == N_FLOORS - 1 && button == BUTTON_HALL_UP)) {
+                continue;
+            }
+            // Set button lights based on active orders
+            elevio_buttonLamp(floor, button, elevator->orders[floor][button]);
+        }
+    }
+}
 
 void printQueue(Elevator* elevator){
     printf("Queue: \n");

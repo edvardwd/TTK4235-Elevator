@@ -1,6 +1,7 @@
 #ifndef ELEVATOR_H
 #define ELEVATOR_H
 
+#include "driver/elevio.h"
 #include "ElevatorStateMachine.h"
 #include "stdlib.h"
 #include "stdio.h"
@@ -28,6 +29,11 @@ int compareDown(int a, int b, int currentFloor);
 
 
 void updateLights(Elevator* elevator);
+void stopButton (Elevator* elevator);
+void doorLight (Elevator* elevator);
+void buttonLights (Elevator* elevator);
+
+
 void printOrders(Elevator* elevator);
 void printQueue(Elevator* elevator);
 
