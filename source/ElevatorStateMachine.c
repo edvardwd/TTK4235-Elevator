@@ -3,9 +3,11 @@
 
 void initElevatorStateMachine(ElevatorStateMachine* stateMachine){
     stateMachine->state = IDLE;
+    stateMachine->state = IDLE;
     stateMachine->dir = DIRN_STOP;
     stateMachine->lastFloor = -1;
     stateMachine->doorOpen = 0;
+    stateMachine->shouldClear = 0;
     initTimer(&stateMachine->timer);
 }
 
@@ -36,4 +38,80 @@ char* getStateAsStr(State state){
     default:
         return "";
     }
+}
+
+
+void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
+    char* stateStr = getStateAsStr(stateMachine->state);
+    printf("Current state is %s\n", stateStr);
+    State newState;
+    switch (stateMachine->state)
+    {
+
+    case IDLE:
+        if (elevio_stopButton()){
+            if (elevio_floorSensor() != -1){
+                newState = DOOR_OPEN;
+            } else{
+                newState = EMERGENCY_STOP;
+                setDir(stateMachine, DIRN_STOP);
+            }
+                     
+            break;
+        }
+        if (nextFloor == -1) break;
+
+        if (nextFloor > stateMachine->lastFloor){
+            setDir(stateMachine, DIRN_UP);
+            newState = MOVING;
+
+        } else if (nextFloor < stateMachine->lastFloor){
+            setDir(stateMachine, DIRN_DOWN);
+            newState = MOVING;
+        } else{
+            newState = DOOR_OPEN;
+        }
+        
+        break;
+
+    case MOVING:
+        if (elevio_stopButton()){
+            newState = EMERGENCY_STOP;
+            setDir(stateMachine, DIRN_STOP);
+            break;
+        }
+        int floor = elevio_floorSensor();
+        if (floor != -1 && floor == nextFloor){
+            setDir(stateMachine, DIRN_STOP); //change later?
+            newState = DOOR_OPEN;
+            startTimer(&stateMachine->timer);
+        }
+        break;
+
+    case EMERGENCY_STOP:
+        if (!elevio_stopButton()){
+            newState = IDLE;
+        }
+        break;
+
+    case DOOR_OPEN:
+        if (elevio_stopButton()){
+            startTimer(&stateMachine->timer); //reset timer to wait 3 more secs
+            stateMachine->shouldClear = 1;
+            break;
+        }
+        stateMachine->shouldClear = 0;
+        if (elevio_obstruction()){
+            startTimer(&stateMachine->timer); //reset the timer to wait 3 more secs if obstruction sensor is high
+        }
+
+        if (getTimePassed(&stateMachine->timer) >= 3){
+            newState = IDLE;
+        }
+        break;
+    default:
+        break;
+    }
+    stateMachine->lastState = stateMachine->state;
+    stateMachine->state = newState;
 }

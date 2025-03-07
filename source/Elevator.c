@@ -280,13 +280,29 @@ void elevatorMainLoop(Elevator* elevator){
     while (1){
         if (elevio_stopButton() && elevio_obstruction()) break; //way to stop the simulator
 
-        updateState(elevator);
+        //updateState(elevator);
 
         updateLastFloor(&elevator->stateMachine);
         checkForOrders(elevator);
         updateQueue(elevator);
         orderQueue(elevator);
+        updateStateMachine(&elevator->stateMachine, *elevator->queue[0]);
 
+        switch (elevator->stateMachine.state)
+        {
+        case DOOR_OPEN:
+            int clearAll = elevator->stateMachine.shouldClear;
+            clearOrders(elevator, clearAll); //clear floor from orders
+            //turn on light
+            break;
+    
+        case EMERGENCY_STOP:
+            clearOrders(elevator, 1); //clear all orders
+            break;
+
+        default:
+            break;
+        }
 
         nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
     }

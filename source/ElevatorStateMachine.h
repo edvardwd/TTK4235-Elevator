@@ -2,6 +2,7 @@
 #define ELEVATORSTATEMACHINE_H
 #include "driver/elevio.h"
 #include "Timer.h"
+#include "stdio.h"
 
 //Declaration of enums
 typedef enum{
@@ -15,12 +16,14 @@ typedef enum{
 //State machine class
 typedef struct{
     State state;
+    State lastState;
     MotorDirection dir;
 
 
     int lastFloor;  
     int doorOpen;
     Timer timer;
+    int shouldClear;
     
 } ElevatorStateMachine;
 
@@ -30,5 +33,6 @@ void updateLastFloor(ElevatorStateMachine* stateMachine);
 
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir);
 
+void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor);
 char* getStateAsStr(State state);
 #endif
