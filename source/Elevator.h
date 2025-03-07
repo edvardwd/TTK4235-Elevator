@@ -20,17 +20,17 @@ typedef struct{
 void initElevator(Elevator* elevator);
 void checkForOrders(Elevator* elevator);
 void clearOrders(Elevator* elevator, int all);
-void orderQueue(Elevator* elevator);
+void sortQueue(Elevator* elevator);
 void updateQueue(Elevator* elevator);
 
 int queueIsEmpty(Elevator* elevator);
-int compareUp(int a, int b, int currentFloor);
-int compareDown(int a, int b, int currentFloor);
+int compareUp(int a, int b, int currentFloor, int moving);
+int compareDown(int a, int b, int currentFloor, int moving);
 
 
 void updateLights(Elevator* elevator);
-void stopButton (Elevator* elevator);
-void doorLight (Elevator* elevator);
+void stopButtonLight(Elevator* elevator);
+void doorLight(Elevator* elevator);
 void buttonLights (Elevator* elevator);
 
 

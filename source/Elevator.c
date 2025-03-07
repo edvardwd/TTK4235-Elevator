@@ -1,5 +1,4 @@
 #include "Elevator.h"
-#include "driver/elevio.h"
 
 
 void initElevator(Elevator* elevator){ //"constructor"
@@ -20,10 +19,7 @@ void initElevator(Elevator* elevator){ //"constructor"
     //Get to a defined state
     setDir(&elevator->stateMachine, DIRN_DOWN);
     while (elevator->stateMachine.lastFloor == -1){
-        if (elevio_stopButton()){
-            setDir(&elevator->stateMachine, DIRN_STOP);
-            break;
-        }
+
         updateLastFloor(&elevator->stateMachine);
     }
     setDir(&elevator->stateMachine, DIRN_STOP);
@@ -120,7 +116,7 @@ void updateQueue(Elevator* elevator){
     }
 
     //printQueue(elevator);
-    orderQueue(elevator);
+    sortQueue(elevator);
 }
 
 int queueIsEmpty(Elevator *elevator){
@@ -130,39 +126,46 @@ int queueIsEmpty(Elevator *elevator){
     return 1;
 }
 
-int compareUp(int a, int b, int currentFloor){
+int compareUp(int a, int b, int currentFloor, int moving){
     //1 if swap(a, b) is desirable for the queue order
     //printf("Comparing %d and %d. Should swap if %d == -1 or %d > %d or %d < %d\n", a, b, a, a, b, a, currentFloor);
     //printf("Received currentFloor = %d\n", currentFloor);
     if (a == -1) return 1; //send non-orders to the end of the queue
-    if ((a > b && (b != -1))) return 1;
+    if (b == -1) return 0;
+    if (b < currentFloor) return 0; //b is in the wrong dir
+    if ((a == currentFloor) && moving) return 1;
+    if (a > b) return 1;
     if (a < currentFloor) return 1; //a is in the wrong dir
     return 0;
 }
 
-int compareDown(int a, int b, int currentFloor){
+int compareDown(int a, int b, int currentFloor, int moving){
     //1 if swap(a, b) is desirable for the queue order
     //printf("Received currentFloor = %d\n", currentFloor);
     if (a == -1) return 1; //send non-orders to the end of the queue
+    if (b == -1) return 0;
+    if (b > currentFloor) return 0; //b is in the wrong dir
+    if ((a == currentFloor) && moving) return 1;
     if (a < b) return 1;
     if (a > currentFloor) return 1; //a is in the wrong dir
     return 0;
 }
 
-void orderQueue(Elevator* elevator){
+void sortQueue(Elevator* elevator){
     //bubble sort algo
     int swapped;
     int shouldSwap;
     for (int i = 0; i < N_FLOORS; i++){
         swapped = 0;
         for (int j = 0; j < N_FLOORS - i - 1; j++){
+            int moving = (elevator->stateMachine.state == MOVING);
             switch (elevator->stateMachine.dir){
                 case DIRN_UP:
-                    shouldSwap = compareUp(*elevator->queue[j], *elevator->queue[j+1], elevator->stateMachine.lastFloor);
+                    shouldSwap = compareUp(*elevator->queue[j], *elevator->queue[j+1], elevator->stateMachine.lastFloor, moving);
                     //printf("Return value: %d\n", shouldSwap);
                     break;
                 case DIRN_DOWN:
-                    shouldSwap = compareDown(*elevator->queue[j], *elevator->queue[j+1], elevator->stateMachine.lastFloor);
+                    shouldSwap = compareDown(*elevator->queue[j], *elevator->queue[j+1], elevator->stateMachine.lastFloor, moving);
                     break;
                 default:
                     shouldSwap = (*elevator->queue[j] == -1) ? 1 : 0; //move no-orders to the end    
@@ -184,30 +187,19 @@ void orderQueue(Elevator* elevator){
 }
 
 
-void updateLights(Elevator* elevator){ //Turns on correct floor lamp
-    if (elevio_floorSensor() != -1){
+void updateLights(Elevator* elevator){ //Updates all lights
         elevio_floorIndicator(elevator->stateMachine.lastFloor);
-    } else {
-        elevio_floorIndicator(elevator->stateMachine.lastFloor);
-    }
+        stopButtonLight(elevator);
+        doorLight(elevator);
+        buttonLights(elevator);
 }
 
-void stopButton(Elevator* elevator){
-    if (elevio_stopButton()) {
-        elevio_stopLamp(1);
-        // Clear all orders when stop is pressed
-        for (int i = 0; i < N_FLOORS; i++) {
-            for (int j = 0; j < N_BUTTONS; j++) {
-                elevator->orders[i][j] = 0;
-            }
-        }
-    } else {
-        elevio_stopLamp(0);
-    }
+void stopButtonLight(Elevator* elevator){
+    elevio_stopLamp(elevio_stopButton());
 }
 
 void doorLight(Elevator* elevator){ //Turns on door light when door is open
-    elevio_doorOpenLamp(elevator->stateMachine.doorOpen);
+    elevio_doorOpenLamp(elevator->stateMachine.state == DOOR_OPEN);
 }
 
 void buttonLights (Elevator* elevator){ 
@@ -238,6 +230,16 @@ void destroyElevator(Elevator *elevator){ //destructor
         free(elevator->fixedFloors[floor]);
         elevator->fixedFloors[floor] = NULL;
     }
+
+    //Turn off all lights;
+    elevio_stopLamp(0);
+    elevio_doorOpenLamp(0);
+    
+    for (int floor = 0; floor < N_FLOORS; floor++){
+        for (int button = 0; button < N_BUTTONS; button++){
+            elevio_buttonLamp(floor, button, 0);
+        }
+    }
     printf("Elevator successfully destroyed.\n");
 }
 
@@ -246,7 +248,7 @@ void destroyElevator(Elevator *elevator){ //destructor
 void updateState(Elevator* elevator){
     ElevatorStateMachine* stateMachine = &elevator->stateMachine;
     int nextFloor = *elevator->queue[0];
-    char* stateStr = getStateAsStr(elevator->stateMachine.state);
+    State newState = stateMachine->state;
     //printf("Current state is %s\n", stateStr);
     switch (stateMachine->state)
     {
@@ -254,49 +256,70 @@ void updateState(Elevator* elevator){
     case IDLE:
         printOrders(elevator);
         printQueue(elevator);
+
+        float currentFloor = stateMachine->lastFloor;
+        if (elevio_floorSensor() == -1){ //IDLE between floors
+            currentFloor = stateMachine->lastFloor + (0.5 * stateMachine->lastDir);
+        }
+
         if (elevio_stopButton()){
-            stateMachine->state = EMERGENCY_STOP;
-            setDir(&elevator->stateMachine, DIRN_STOP);
+            //stateMachine->state = EMERGENCY_STOP;
+            if (elevio_floorSensor() == -1){
+                newState = EMERGENCY_STOP;
+            } else{
+                newState = DOOR_OPEN;
+                startTimer(&stateMachine->timer);
+            }
+            //setDir(&elevator->stateMachine, DIRN_STOP);
             clearOrders(elevator, 1); //clear all orders
             break;
         }
         if (nextFloor == -1) break;
 
-        if (nextFloor > stateMachine->lastFloor){
+        if (nextFloor > currentFloor){
             setDir(stateMachine, DIRN_UP);
-            stateMachine->state = MOVING;
-
-        } else if (nextFloor < stateMachine->lastFloor){
+            //stateMachine->state = MOVING;
+            newState = MOVING;
+        } else if (nextFloor < currentFloor){
             setDir(stateMachine, DIRN_DOWN);
-            stateMachine->state = MOVING;
-        } else{
-            clearOrders(elevator, 0); //remove floor from queue and orders
+            //stateMachine->state = MOVING;
+            newState = MOVING;
+
+        } else {
+            newState = DOOR_OPEN;
+            startTimer(&stateMachine->timer);
         }
         
         break;
 
     case MOVING:
         if (elevio_stopButton()){
-            stateMachine->state = EMERGENCY_STOP;
-            setDir(&elevator->stateMachine, DIRN_STOP);
+            //stateMachine->state = EMERGENCY_STOP;
+            newState = EMERGENCY_STOP;
+            //setDir(&elevator->stateMachine, DIRN_STOP);
             clearOrders(elevator, 1); //clear all orders
             break;
         }
         int floor = elevio_floorSensor();
         if (floor != -1 && floor == nextFloor){
-            setDir(stateMachine, DIRN_STOP);
-            stateMachine->state = DOOR_OPEN;
+            //setDir(stateMachine, DIRN_STOP);
+            //stateMachine->state = DOOR_OPEN;
+            newState = DOOR_OPEN;
             startTimer(&stateMachine->timer);
         }
         break;
 
     case EMERGENCY_STOP:
+        setDir(stateMachine, DIRN_STOP);
         if (!elevio_stopButton()){
-            stateMachine->state = IDLE;
+            //stateMachine->state = IDLE;
+            newState = IDLE;
         }
         break;
 
     case DOOR_OPEN:
+        clearOrders(elevator, 0); //remove floor from queue and orders
+        setDir(stateMachine, DIRN_STOP);
         if (elevio_stopButton()){
             startTimer(&stateMachine->timer); //reset timer to wait 3 more secs
             clearOrders(elevator, 1); //clear all orders
@@ -307,26 +330,32 @@ void updateState(Elevator* elevator){
         }
 
         if (getTimePassed(&stateMachine->timer) >= 3){
-            stateMachine->state = IDLE;
+            //stateMachine->state = IDLE;
+            newState = IDLE;
         }
         break;
     default:
+        newState = stateMachine->state;
         break;
     }
+    stateMachine->lastState = stateMachine->state;
+    stateMachine->state = newState;
+    printf("Updated state. Current: %s, Last: %s, dir: %d\n", stateToStr(stateMachine->state), stateToStr(stateMachine->lastState), stateMachine->dir);
 }
 
 
 void elevatorMainLoop(Elevator* elevator){
     while (1){
-        if (elevio_stopButton() && elevio_obstruction()) break; //way to stop the simulator
+        //if (elevio_stopButton() && elevio_obstruction()) break; //way to stop the simulator
 
-        //updateState(elevator);
+        updateState(elevator);
 
         updateLastFloor(&elevator->stateMachine);
         checkForOrders(elevator);
         updateQueue(elevator);
-        orderQueue(elevator);
-        updateStateMachine(&elevator->stateMachine, *elevator->queue[0]);
+        //updateStateMachine(&elevator->stateMachine, *elevator->queue[0]);
+        printQueue(elevator);
+        updateLights(elevator);
 
         switch (elevator->stateMachine.state)
         {
@@ -346,4 +375,5 @@ void elevatorMainLoop(Elevator* elevator){
 
         nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
     }
+
 }

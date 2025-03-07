@@ -18,7 +18,7 @@ typedef struct{
     State state;
     State lastState;
     MotorDirection dir;
-
+    MotorDirection lastDir;
 
     int lastFloor;  
     int doorOpen;
@@ -34,5 +34,5 @@ void updateLastFloor(ElevatorStateMachine* stateMachine);
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir);
 
 void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor);
-char* getStateAsStr(State state);
+char* stateToStr(State state);
 #endif

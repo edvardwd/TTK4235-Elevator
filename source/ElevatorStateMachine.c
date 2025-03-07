@@ -3,8 +3,9 @@
 
 void initElevatorStateMachine(ElevatorStateMachine* stateMachine){
     stateMachine->state = IDLE;
-    stateMachine->state = IDLE;
+    stateMachine->lastState = IDLE;
     stateMachine->dir = DIRN_STOP;
+    stateMachine->lastDir = DIRN_STOP;
     stateMachine->lastFloor = -1;
     stateMachine->doorOpen = 0;
     stateMachine->shouldClear = 0;
@@ -19,12 +20,13 @@ void updateLastFloor(ElevatorStateMachine* stateMachine){
 
 
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir){
+    stateMachine->lastDir = (stateMachine->dir == DIRN_STOP) ? stateMachine->lastDir : stateMachine->dir; //avoid lastDir to be set to DIRN_STOP
     stateMachine->dir = dir;
     elevio_motorDirection(dir);
 }
 
 
-char* getStateAsStr(State state){
+char* stateToStr(State state){
     switch (state)
     {
     case MOVING:
@@ -36,13 +38,13 @@ char* getStateAsStr(State state){
     case DOOR_OPEN:
         return "DOOR_OPEN";
     default:
-        return "";
+        return "ERROR";
     }
 }
 
 
 void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
-    char* stateStr = getStateAsStr(stateMachine->state);
+    char* stateStr = stateToStr(stateMachine->state);
     printf("Current state is %s\n", stateStr);
     State newState;
     switch (stateMachine->state)
@@ -54,7 +56,7 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
                 newState = DOOR_OPEN;
             } else{
                 newState = EMERGENCY_STOP;
-                setDir(stateMachine, DIRN_STOP);
+                //setDir(stateMachine, DIRN_STOP);
             }
                      
             break;
@@ -77,7 +79,7 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
     case MOVING:
         if (elevio_stopButton()){
             newState = EMERGENCY_STOP;
-            setDir(stateMachine, DIRN_STOP);
+            //setDir(stateMachine, DIRN_STOP);
             break;
         }
         int floor = elevio_floorSensor();
@@ -89,6 +91,7 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
         break;
 
     case EMERGENCY_STOP:
+        setDir(stateMachine, DIRN_STOP);
         if (!elevio_stopButton()){
             newState = IDLE;
         }

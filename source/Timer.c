@@ -2,6 +2,7 @@
 
 void initTimer(Timer* timer){
     timer->startTime = time(0); //set the current time
+    timer->stopTime = time(0);
 }
 
 
