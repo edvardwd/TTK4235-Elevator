@@ -18,31 +18,25 @@ typedef struct{
 
 
 void initElevator(Elevator* elevator);
-void checkForOrders(Elevator* elevator);
+void destroyElevator(Elevator* elevator); 
+
 void clearOrders(Elevator* elevator, int all);
-void sortQueue(Elevator* elevator);
 void updateQueue(Elevator* elevator);
 
-int queueIsEmpty(Elevator* elevator);
-int compareUp(int a, int b, int currentFloor, int moving);
-int compareDown(int a, int b, int currentFloor, int moving);
+int hallOrderWrongDir(int floor, MotorDirection dir, Elevator* elevator);
+int compareUp(int a, int b, Elevator* elevator);
+int compareDown(int a, int b, Elevator* elevator);
+void sortQueue(Elevator* elevator);
 
-
-void updateLights(Elevator* elevator);
 void stopButtonLight(Elevator* elevator);
 void doorLight(Elevator* elevator);
 void buttonLights (Elevator* elevator);
-
+void updateLights(Elevator* elevator);
 
 void printOrders(Elevator* elevator);
 void printQueue(Elevator* elevator);
 
-void destroyElevator(Elevator* elevator); 
-void updateState(Elevator* elevator);
-
 
 void elevatorMainLoop(Elevator* elevator);
-
-
 
 #endif

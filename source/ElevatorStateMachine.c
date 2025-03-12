@@ -7,8 +7,7 @@ void initElevatorStateMachine(ElevatorStateMachine* stateMachine){
     stateMachine->dir = DIRN_STOP;
     stateMachine->lastDir = DIRN_STOP;
     stateMachine->lastFloor = -1;
-    stateMachine->doorOpen = 0;
-    stateMachine->shouldClear = 0;
+    stateMachine->shouldClearAll = 0;
     initTimer(&stateMachine->timer);
 }
 
@@ -46,36 +45,42 @@ char* stateToStr(State state){
 void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
     char* stateStr = stateToStr(stateMachine->state);
     printf("Current state is %s\n", stateStr);
-    State newState;
+    State newState = stateMachine->state;
     switch (stateMachine->state)
     {
 
-    case IDLE:
+    case IDLE: {
+
+        float currentFloor = stateMachine->lastFloor;
+        if (elevio_floorSensor() == -1){ //IDLE between floors
+            currentFloor = currentFloor + (0.5 * stateMachine->lastDir); 
+        }
         if (elevio_stopButton()){
-            if (elevio_floorSensor() != -1){
-                newState = DOOR_OPEN;
-            } else{
+            if (elevio_floorSensor() == -1){
                 newState = EMERGENCY_STOP;
-                //setDir(stateMachine, DIRN_STOP);
+            } else{
+                newState = DOOR_OPEN;
+                startTimer(&stateMachine->timer);
             }
-                     
+
             break;
         }
         if (nextFloor == -1) break;
 
-        if (nextFloor > stateMachine->lastFloor){
+        if (nextFloor > currentFloor){
             setDir(stateMachine, DIRN_UP);
             newState = MOVING;
 
-        } else if (nextFloor < stateMachine->lastFloor){
+        } else if (nextFloor < currentFloor){
             setDir(stateMachine, DIRN_DOWN);
             newState = MOVING;
         } else{
             newState = DOOR_OPEN;
+            startTimer(&stateMachine->timer);
         }
         
         break;
-
+    }
     case MOVING:
         if (elevio_stopButton()){
             newState = EMERGENCY_STOP;
@@ -84,7 +89,6 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
         }
         int floor = elevio_floorSensor();
         if (floor != -1 && floor == nextFloor){
-            setDir(stateMachine, DIRN_STOP); //change later?
             newState = DOOR_OPEN;
             startTimer(&stateMachine->timer);
         }
@@ -98,12 +102,13 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
         break;
 
     case DOOR_OPEN:
+        setDir(stateMachine, DIRN_STOP);
         if (elevio_stopButton()){
             startTimer(&stateMachine->timer); //reset timer to wait 3 more secs
-            stateMachine->shouldClear = 1;
+            stateMachine->shouldClearAll = 1;
             break;
         }
-        stateMachine->shouldClear = 0;
+        
         if (elevio_obstruction()){
             startTimer(&stateMachine->timer); //reset the timer to wait 3 more secs if obstruction sensor is high
         }
@@ -113,8 +118,10 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
         }
         break;
     default:
+        newState = stateMachine->state; 
         break;
     }
     stateMachine->lastState = stateMachine->state;
     stateMachine->state = newState;
+    printf("Updated state. Current: %s, Last: %s, dir: %d\n", stateToStr(stateMachine->state), stateToStr(stateMachine->lastState), stateMachine->dir);
 }

@@ -20,10 +20,10 @@ typedef struct{
     MotorDirection dir;
     MotorDirection lastDir;
 
-    int lastFloor;  
-    int doorOpen;
+    int lastFloor;
     Timer timer;
-    int shouldClear;
+
+    int shouldClearAll;
     
 } ElevatorStateMachine;
 
