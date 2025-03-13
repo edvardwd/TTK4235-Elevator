@@ -1,7 +1,7 @@
 #include "Elevator.h"
 
 
-void initElevator(Elevator* elevator){ //"constructor"
+void initElevator(Elevator* elevator){ // "constructor"
     // Initializes the elevator and state machine, allocates memory
     // and ensures the elevator reaches a defined state upon startup.
     elevio_init();
@@ -32,13 +32,13 @@ void initElevator(Elevator* elevator){ //"constructor"
 void destroyElevator(Elevator *elevator){ 
     // Cleans up recources and resets all elevator-related states before termination.
     
-    //Free all dynamically allocated memory.
+    // Free all dynamically allocated memory.
     for (int floor = 0; floor < N_FLOORS; floor++){
         free(elevator->fixedFloors[floor]);
         elevator->fixedFloors[floor] = NULL;
     }
 
-    //Turn off lights
+    // Turn off lights
     elevio_stopLamp(0);
     elevio_doorOpenLamp(0);
     
@@ -79,7 +79,7 @@ void updateQueue(Elevator* elevator){
     // Scans for new orders, updates the queue and sorts it based on priority.
     for (int floor = 0; floor < N_FLOORS; floor++){
         for (int button = 0; button < N_BUTTONS; button++){
-            //Skip invalid buttons at top and bottom floors
+            // Skip invalid buttons at top and bottom floors
             if (floor == 0 && button == BUTTON_HALL_DOWN) continue;
             if (floor == N_FLOORS - 1 && button == BUTTON_HALL_UP) continue;
 
@@ -119,7 +119,7 @@ int compareUp(int a, int b, Elevator* elevator){
     if (!hallOrderWrongDir(a, DIRN_UP, elevator) && (a > b)) return 1;
     if (!hallOrderWrongDir(b, DIRN_UP, elevator) && (a > b)) return 1;
 
-    if (a < currentFloor) return 1; //a is in the wrong dir
+    if (a < currentFloor) return 1; // a is in the wrong dir
     return 0;
 }
 
@@ -134,19 +134,19 @@ int compareDown(int a, int b, Elevator* elevator){
     if (b > currentFloor) return 0; // Ignore floors above when moving down
     if ((a == currentFloor) && moving) return 1; // Prioritize departing floor
 
-    //Makes sure hall orders in the wrong direction are not being prioritized
+    // Makes sure hall orders in the wrong direction are not being prioritized
     if (!hallOrderWrongDir(a, DIRN_DOWN, elevator) && hallOrderWrongDir(b, DIRN_DOWN, elevator)) return 0;
     if (hallOrderWrongDir(a, DIRN_DOWN, elevator) && b < a) return 1;
     if (!hallOrderWrongDir(a, DIRN_DOWN, elevator) && (a < b)) return 1;
     if (!hallOrderWrongDir(b, DIRN_DOWN, elevator) && (a < b)) return 1;
 
-    if (a > currentFloor) return 1; //a is in the wrong dir
+    if (a > currentFloor) return 1; // a is in the wrong dir
     return 0;
 }
 
 void sortQueue(Elevator* elevator){
-    //Sorts the queue using a bubble sort algorithm.
-    //The floors in the queue are swapped if 1 is returned from compareUp or compareDown
+    // Sorts the queue using a bubble sort algorithm.
+    // The floors in the queue are swapped if 1 is returned from compareUp or compareDown
     int swapped;
     int shouldSwap;
 
@@ -176,7 +176,7 @@ void sortQueue(Elevator* elevator){
 }
 
 void updateLights(Elevator* elevator){
-    //Updates all lights according to the elevator's state and position
+    // Updates all lights according to the elevator's state and position
     elevio_floorIndicator(elevator->stateMachine.lastFloor);
     stopButtonLight(elevator);
     doorLight(elevator);
@@ -192,7 +192,7 @@ void doorLight(Elevator* elevator){
 }
 
 void buttonLights (Elevator* elevator){ 
-    //Sets button lights based on active orders
+    // Sets button lights based on active orders
     for (int floor = 0; floor < N_FLOORS; floor++) {
         for (int button = 0; button < N_BUTTONS; button++) {
             // Skip invalid buttons at top and bottom floors

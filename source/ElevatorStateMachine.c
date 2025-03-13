@@ -112,7 +112,7 @@ void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
             startTimer(&stateMachine->timer); // Resets timer when obstruction is detected.
         }
         // Closes doors after 3 seconds.
-        if (getTimePassed(&stateMachine->timer) >= 3){ //3 seconds passed -> close the door
+        if (getTimePassed(&stateMachine->timer) >= 3){
             newState = IDLE;
         }
         break;
@@ -127,8 +127,8 @@ void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
 
 
 char* stateToStr(State state){
-    //Helper function for debugging. 
-    //Essentially a map with state as key and string as value.
+    // Helper function for debugging. 
+    // Essentially a map with state as key and string as value.
     switch (state)
     {
     case MOVING:
