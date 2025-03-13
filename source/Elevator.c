@@ -29,23 +29,25 @@ void initElevator(Elevator* elevator){ //"constructor"
     
 }
 
+void destroyElevator(Elevator *elevator){ 
+    //Acts as a destructor for the elevator.
+    
+    //Free all dynamically allocated memory
+    for (int floor = 0; floor < N_FLOORS; floor++){
+        free(elevator->fixedFloors[floor]);
+        elevator->fixedFloors[floor] = NULL;
+    }
 
-
-void updateQueue(Elevator* elevator){
-    //Takes all orders, places them in the queue and sorts the queue
+    //Turn off lights
+    elevio_stopLamp(0);
+    elevio_doorOpenLamp(0);
+    
     for (int floor = 0; floor < N_FLOORS; floor++){
         for (int button = 0; button < N_BUTTONS; button++){
-            //Skip invalid buttons at top and bottom floors
-            if (floor == 0 && button == BUTTON_HALL_DOWN) continue;
-            if (floor == N_FLOORS - 1 && button == BUTTON_HALL_UP) continue;
-
-            if (elevio_callButton(floor, button)){
-                elevator->orders[floor][button] = 1;
-                *(elevator->fixedFloors[floor]) = floor;
-            }
+            elevio_buttonLamp(floor, button, 0);
         }
     }
-    sortQueue(elevator);
+    printf("Elevator successfully destroyed.\n");
 }
 
 void clearOrders(Elevator *elevator, int all){
@@ -72,18 +74,22 @@ void clearOrders(Elevator *elevator, int all){
     }
 }
 
-void printOrders(Elevator* elevator){
-    //Helper function for debugging. Prints the queue.
-    for (int floor = N_FLOORS - 1; floor >= 0; floor--){
-        printf("Floor %d: ", floor);
+void updateQueue(Elevator* elevator){
+    //Takes all orders, places them in the queue and sorts the queue
+    for (int floor = 0; floor < N_FLOORS; floor++){
         for (int button = 0; button < N_BUTTONS; button++){
-            printf("%d ", elevator->orders[floor][button]);
-        }
-        printf("\n");
-    }
-    printf("----------------\n");
-}
+            //Skip invalid buttons at top and bottom floors
+            if (floor == 0 && button == BUTTON_HALL_DOWN) continue;
+            if (floor == N_FLOORS - 1 && button == BUTTON_HALL_UP) continue;
 
+            if (elevio_callButton(floor, button)){
+                elevator->orders[floor][button] = 1;
+                *(elevator->fixedFloors[floor]) = floor;
+            }
+        }
+    }
+    sortQueue(elevator);
+}
 
 int hallOrderWrongDir(int floor, MotorDirection dir, Elevator* elevator){
     //returns 1 if the only order at the floor is a hall order in the wrong direction.
@@ -168,7 +174,6 @@ void sortQueue(Elevator* elevator){
     }
 }
 
-
 void updateLights(Elevator* elevator){
     //Updates all lights according to the elevators state and position
     elevio_floorIndicator(elevator->stateMachine.lastFloor);
@@ -199,40 +204,8 @@ void buttonLights (Elevator* elevator){
     }
 }
 
-void printQueue(Elevator* elevator){
-    //Helper function for debugging. Prints the queue.
-    printf("Queue: \n");
-    for (int i = 0; i < N_FLOORS; i++){
-        printf("%d ", *(elevator->queue[i]));
-    }
-    printf("\n--------------\n");
-}
-
-void destroyElevator(Elevator *elevator){ 
-    //Acts as a destructor for the elevator.
-    
-    //Free all dynamically allocated memory
-    for (int floor = 0; floor < N_FLOORS; floor++){
-        free(elevator->fixedFloors[floor]);
-        elevator->fixedFloors[floor] = NULL;
-    }
-
-    //Turn off lights
-    elevio_stopLamp(0);
-    elevio_doorOpenLamp(0);
-    
-    for (int floor = 0; floor < N_FLOORS; floor++){
-        for (int button = 0; button < N_BUTTONS; button++){
-            elevio_buttonLamp(floor, button, 0);
-        }
-    }
-    printf("Elevator successfully destroyed.\n");
-}
-
-
 void elevatorMainLoop(Elevator* elevator){
-    //Puts together all functionality for the elevator and makes sure it runs as it should.
-
+    //Puts together all functionality for the elevator and makes sure it operates as it should.
     while (1){
         if (elevio_stopButton() && elevio_obstruction()) break; //way to stop the simulator
         elevator->stateMachine.shouldClearAll = 0;
@@ -256,8 +229,28 @@ void elevatorMainLoop(Elevator* elevator){
         default:
             break;
         }
-
         //nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
     }
 
+}
+
+void printOrders(Elevator* elevator){
+    //Helper function for debugging. Prints the queue.
+    for (int floor = N_FLOORS - 1; floor >= 0; floor--){
+        printf("Floor %d: ", floor);
+        for (int button = 0; button < N_BUTTONS; button++){
+            printf("%d ", elevator->orders[floor][button]);
+        }
+        printf("\n");
+    }
+    printf("----------------\n");
+}
+
+void printQueue(Elevator* elevator){
+    //Helper function for debugging. Prints the queue.
+    printf("Queue: \n");
+    for (int i = 0; i < N_FLOORS; i++){
+        printf("%d ", *(elevator->queue[i]));
+    }
+    printf("\n--------------\n");
 }
