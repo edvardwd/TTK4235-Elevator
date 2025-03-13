@@ -4,7 +4,7 @@
 #include "Timer.h"
 #include "stdio.h"
 
-//Declaration of enums
+//State enums
 typedef enum{
     MOVING,
     IDLE,
@@ -21,18 +21,19 @@ typedef struct{
     MotorDirection lastDir;
 
     int lastFloor;
-    Timer timer;
+    Timer timer; //timer object to monitor how long the door has been open
 
-    int shouldClearAll;
+    int shouldClearAll; //flag to signalize if the Elevator struct should clear the whole queue
     
 } ElevatorStateMachine;
 
 
 void initElevatorStateMachine(ElevatorStateMachine* stateMachine);
-void updateLastFloor(ElevatorStateMachine* stateMachine);
 
+void updateState(ElevatorStateMachine* stateMachine, int nextFloor);
+void updateLastFloor(ElevatorStateMachine* stateMachine);
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir);
 
-void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor);
 char* stateToStr(State state);
+
 #endif

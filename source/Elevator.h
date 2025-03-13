@@ -9,10 +9,10 @@
 typedef struct{
     ElevatorStateMachine stateMachine;
     
-    int* fixedFloors[N_FLOORS];
-    int* queue[N_FLOORS];
+    int* fixedFloors[N_FLOORS]; //array holding the pointers of the different floors
+    int* queue[N_FLOORS]; //array holding pointers to the floors values (-1 if no order and floor number if order)
 
-    int orders[N_FLOORS][N_BUTTONS];
+    int orders[N_FLOORS][N_BUTTONS]; //2d array to monitor placed orders
 
 } Elevator;
 
@@ -33,10 +33,10 @@ void doorLight(Elevator* elevator);
 void buttonLights (Elevator* elevator);
 void updateLights(Elevator* elevator);
 
+void elevatorMainLoop(Elevator* elevator);
+
 void printOrders(Elevator* elevator);
 void printQueue(Elevator* elevator);
 
-
-void elevatorMainLoop(Elevator* elevator);
 
 #endif

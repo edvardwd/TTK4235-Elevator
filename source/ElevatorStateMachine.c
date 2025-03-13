@@ -2,6 +2,8 @@
 
 
 void initElevatorStateMachine(ElevatorStateMachine* stateMachine){
+    //Acts as a constructor for the ElevatorStateMachine struct
+    //Sets values and initializes the timer
     stateMachine->state = IDLE;
     stateMachine->lastState = IDLE;
     stateMachine->dir = DIRN_STOP;
@@ -19,33 +21,20 @@ void updateLastFloor(ElevatorStateMachine* stateMachine){
 
 
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir){
+    //Updates the lastDir and dir variables, and moves the elevator in the desired direction.
     stateMachine->lastDir = (stateMachine->dir == DIRN_STOP) ? stateMachine->lastDir : stateMachine->dir; //avoid lastDir to be set to DIRN_STOP
     stateMachine->dir = dir;
     elevio_motorDirection(dir);
 }
 
 
-char* stateToStr(State state){
-    switch (state)
-    {
-    case MOVING:
-        return "MOVING";
-    case IDLE:
-        return "IDLE";
-    case EMERGENCY_STOP:
-        return "EMERGENCY_STOP";
-    case DOOR_OPEN:
-        return "DOOR_OPEN";
-    default:
-        return "ERROR";
-    }
-}
+void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
+    //Updates the state and moves the elevator based on the last state, buttons pressed and the next floor in the queue.
 
-
-void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
     char* stateStr = stateToStr(stateMachine->state);
     printf("Current state is %s\n", stateStr);
     State newState = stateMachine->state;
+
     switch (stateMachine->state)
     {
 
@@ -84,11 +73,10 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
     case MOVING:
         if (elevio_stopButton()){
             newState = EMERGENCY_STOP;
-            //setDir(stateMachine, DIRN_STOP);
             break;
         }
         int floor = elevio_floorSensor();
-        if (floor != -1 && floor == nextFloor){
+        if (floor != -1 && floor == nextFloor){ //reached the desired floor
             newState = DOOR_OPEN;
             startTimer(&stateMachine->timer);
         }
@@ -113,7 +101,7 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
             startTimer(&stateMachine->timer); //reset the timer to wait 3 more secs if obstruction sensor is high
         }
 
-        if (getTimePassed(&stateMachine->timer) >= 3){
+        if (getTimePassed(&stateMachine->timer) >= 3){ //3 seconds passed -> close the door
             newState = IDLE;
         }
         break;
@@ -124,4 +112,23 @@ void updateStateMachine(ElevatorStateMachine* stateMachine, int nextFloor){
     stateMachine->lastState = stateMachine->state;
     stateMachine->state = newState;
     printf("Updated state. Current: %s, Last: %s, dir: %d\n", stateToStr(stateMachine->state), stateToStr(stateMachine->lastState), stateMachine->dir);
+}
+
+
+char* stateToStr(State state){
+    //Helper function for debugging. 
+    //Essentially a map with state as key and string as value.
+    switch (state)
+    {
+    case MOVING:
+        return "MOVING";
+    case IDLE:
+        return "IDLE";
+    case EMERGENCY_STOP:
+        return "EMERGENCY_STOP";
+    case DOOR_OPEN:
+        return "DOOR_OPEN";
+    default:
+        return "ERROR";
+    }
 }
