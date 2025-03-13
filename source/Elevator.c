@@ -2,8 +2,8 @@
 
 
 void initElevator(Elevator* elevator){ //"constructor"
-    //Initializes the elevator and statemachine, allocates memory and sets values.
-    //Also makes sure the elevator gets to a defined state when starting up.
+    // Initializes the elevator and state machine, allocates memory
+    // and ensures the elevator reaches a defined state upon startup.
     elevio_init();
     initElevatorStateMachine(&elevator->stateMachine);
     
@@ -14,11 +14,11 @@ void initElevator(Elevator* elevator){ //"constructor"
         elevator->queue[i] = num;
 
         for (int j = 0; j < N_BUTTONS; j++){
-            elevator->orders[i][j] = 0;
+            elevator->orders[i][j] = 0; // Initialize order matrix with no active orders.
         }
     }
 
-    //Get to a defined state
+    //Starts from a defined floor.
     setDir(&elevator->stateMachine, DIRN_DOWN);
     while (elevator->stateMachine.lastFloor == -1){
 
@@ -30,9 +30,9 @@ void initElevator(Elevator* elevator){ //"constructor"
 }
 
 void destroyElevator(Elevator *elevator){ 
-    //Acts as a destructor for the elevator.
+    // Cleans up recources and resets all elevator-related states before termination.
     
-    //Free all dynamically allocated memory
+    //Free all dynamically allocated memory.
     for (int floor = 0; floor < N_FLOORS; floor++){
         free(elevator->fixedFloors[floor]);
         elevator->fixedFloors[floor] = NULL;
@@ -51,8 +51,8 @@ void destroyElevator(Elevator *elevator){
 }
 
 void clearOrders(Elevator *elevator, int all){
-    //Sets all orders in lastFloor (or all floors) to 0, and sets the correspondent floor to -1 in queue
-    //i.e. all orders are removed, and the queue is also cleared
+    // Clears all active orders. If 'all' is true, it clears all floors;
+    // otherwise, it clears only the last floor the elevator stopped at.
     if (all){
         for (int floor = 0; floor < N_FLOORS; floor++){
             if (elevator->queue[floor] == NULL){
@@ -65,7 +65,8 @@ void clearOrders(Elevator *elevator, int all){
             }
         }
     
-    } else{ //should be used when a floor is reached
+    } else{ 
+        // Clears only the floor where the elevator is currently stopped.
         *(elevator->fixedFloors[elevator->stateMachine.lastFloor]) = -1;
 
         for (int button = 0; button < N_BUTTONS; button++){
@@ -75,7 +76,7 @@ void clearOrders(Elevator *elevator, int all){
 }
 
 void updateQueue(Elevator* elevator){
-    //Takes all orders, places them in the queue and sorts the queue
+    // Scans for new orders, updates the queue and sorts it based on priority.
     for (int floor = 0; floor < N_FLOORS; floor++){
         for (int button = 0; button < N_BUTTONS; button++){
             //Skip invalid buttons at top and bottom floors
@@ -92,7 +93,7 @@ void updateQueue(Elevator* elevator){
 }
 
 int hallOrderWrongDir(int floor, MotorDirection dir, Elevator* elevator){
-    //returns 1 if the only order at the floor is a hall order in the wrong direction.
+    // Checks if the only active order on a floor is a hall call in the opposite direction of movement.
     if (dir == DIRN_UP){
         return (elevator->orders[floor][BUTTON_HALL_DOWN] && !elevator->orders[floor][BUTTON_HALL_UP]
             && !elevator->orders[floor][BUTTON_CAB]);
@@ -102,17 +103,17 @@ int hallOrderWrongDir(int floor, MotorDirection dir, Elevator* elevator){
 }
 
 int compareUp(int a, int b, Elevator* elevator){
-    //Compares two orders and decides if they should swap position in the queue when moving up.
-    //i.e. returns 1 if swap(a, b) is desirable for the queue order
+    // Determines if two queued orders should swap positions when moving up.
+
     int currentFloor = elevator->stateMachine.lastFloor;
     int moving = (elevator->stateMachine.state == MOVING);
 
-    if (a == -1) return 1; //send non-orders to the end of the queue
+    if (a == -1) return 1; // Send non-orders to the end of the queue.
     if (b == -1) return 0;
-    if (b < currentFloor) return 0; //b is in the wrong dir
-    if ((a == currentFloor) && moving) return 1; //just departed from a
+    if (b < currentFloor) return 0; // Ignore floors below when moving up
+    if ((a == currentFloor) && moving) return 1; // Prioritize departing floor
 
-    //Makes sure hall orders in the wrong direction are not being prioritized
+    // Prevent prioritizing hall orders in the wrong direction
     if (!hallOrderWrongDir(a, DIRN_UP, elevator) && hallOrderWrongDir(b, DIRN_UP, elevator)) return 0;
     if (hallOrderWrongDir(a, DIRN_UP, elevator) && b > a) return 1;
     if (!hallOrderWrongDir(a, DIRN_UP, elevator) && (a > b)) return 1;
@@ -123,15 +124,15 @@ int compareUp(int a, int b, Elevator* elevator){
 }
 
 int compareDown(int a, int b, Elevator* elevator){
-    //Compares two orders and decides if they should swap position in the queue when moving down.
-    //i.e. returns 1 if swap(a, b) is desirable for the queue order  
+    // Determines if two queued orders should swap positions when moving up.
+
     int currentFloor = elevator->stateMachine.lastFloor;
     int moving = (elevator->stateMachine.state == MOVING);
 
-    if (a == -1) return 1; //send non-orders to the end of the queue
+    if (a == -1) return 1; // Send non-orders to the end of the queue
     if (b == -1) return 0;
-    if (b > currentFloor) return 0; //b is in the wrong dir
-    if ((a == currentFloor) && moving) return 1; //just departed from a
+    if (b > currentFloor) return 0; // Ignore floors above when moving down
+    if ((a == currentFloor) && moving) return 1; // Prioritize departing floor
 
     //Makes sure hall orders in the wrong direction are not being prioritized
     if (!hallOrderWrongDir(a, DIRN_DOWN, elevator) && hallOrderWrongDir(b, DIRN_DOWN, elevator)) return 0;
@@ -175,7 +176,7 @@ void sortQueue(Elevator* elevator){
 }
 
 void updateLights(Elevator* elevator){
-    //Updates all lights according to the elevators state and position
+    //Updates all lights according to the elevator's state and position
     elevio_floorIndicator(elevator->stateMachine.lastFloor);
     stopButtonLight(elevator);
     doorLight(elevator);
@@ -205,9 +206,9 @@ void buttonLights (Elevator* elevator){
 }
 
 void elevatorMainLoop(Elevator* elevator){
-    //Puts together all functionality for the elevator and makes sure it operates as it should.
+    // Main operational loop handling elevator logic and state updated
     while (1){
-        if (elevio_stopButton() && elevio_obstruction()) break; //way to stop the simulator
+        if (elevio_stopButton() && elevio_obstruction()) break; // Way to stop the simulator
         elevator->stateMachine.shouldClearAll = 0;
         updateState(&elevator->stateMachine, *elevator->queue[0]);
         updateLastFloor(&elevator->stateMachine);
@@ -219,11 +220,11 @@ void elevatorMainLoop(Elevator* elevator){
         {
         case DOOR_OPEN:{
             int clearAll = elevator->stateMachine.shouldClearAll;
-            clearOrders(elevator, clearAll); //clear floor from orders
+            clearOrders(elevator, clearAll); // Clear floor from orders
             break;
         }
         case EMERGENCY_STOP:
-            clearOrders(elevator, 1); //clear all orders
+            clearOrders(elevator, 1); // Clear all orders
             break;
 
         default:
@@ -235,7 +236,7 @@ void elevatorMainLoop(Elevator* elevator){
 }
 
 void printOrders(Elevator* elevator){
-    //Helper function for debugging. Prints the queue.
+    // Helper function for debugging. Prints the queue.
     for (int floor = N_FLOORS - 1; floor >= 0; floor--){
         printf("Floor %d: ", floor);
         for (int button = 0; button < N_BUTTONS; button++){
@@ -247,7 +248,7 @@ void printOrders(Elevator* elevator){
 }
 
 void printQueue(Elevator* elevator){
-    //Helper function for debugging. Prints the queue.
+    // Helper function for debugging. Prints the queue.
     printf("Queue: \n");
     for (int i = 0; i < N_FLOORS; i++){
         printf("%d ", *(elevator->queue[i]));

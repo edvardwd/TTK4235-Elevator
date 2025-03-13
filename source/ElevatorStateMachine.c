@@ -2,8 +2,8 @@
 
 
 void initElevatorStateMachine(ElevatorStateMachine* stateMachine){
-    //Acts as a constructor for the ElevatorStateMachine struct
-    //Sets values and initializes the timer
+    // Initializes the ElevatorStateMachine structure by setting default values,
+    // and initializing the timer
     stateMachine->state = IDLE;
     stateMachine->lastState = IDLE;
     stateMachine->dir = DIRN_STOP;
@@ -16,20 +16,21 @@ void initElevatorStateMachine(ElevatorStateMachine* stateMachine){
 
 void updateLastFloor(ElevatorStateMachine* stateMachine){
     int floor = elevio_floorSensor();
-    stateMachine->lastFloor = (floor == -1) ? stateMachine->lastFloor : floor; //update floor when a new floor is reached
+    stateMachine->lastFloor = (floor == -1) ? stateMachine->lastFloor : floor; // Update floor when a new floor is reached
 }
 
 
 void setDir(ElevatorStateMachine* stateMachine, MotorDirection dir){
-    //Updates the lastDir and dir variables, and moves the elevator in the desired direction.
-    stateMachine->lastDir = (stateMachine->dir == DIRN_STOP) ? stateMachine->lastDir : stateMachine->dir; //avoid lastDir to be set to DIRN_STOP
+    // Sets the elevator's movement direction while preserving the last direction.
+    // Prevents lastdir from being set to STOP when transitioning states.
+    stateMachine->lastDir = (stateMachine->dir == DIRN_STOP) ? stateMachine->lastDir : stateMachine->dir;
     stateMachine->dir = dir;
     elevio_motorDirection(dir);
 }
 
 
 void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
-    //Updates the state and moves the elevator based on the last state, buttons pressed and the next floor in the queue.
+    // Manages states transitions based on current state, queued orders and button presses
 
     char* stateStr = stateToStr(stateMachine->state);
     printf("Current state is %s\n", stateStr);
@@ -39,11 +40,14 @@ void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
     {
 
     case IDLE: {
-
+        // Handles transitions from IDLE based on button presses or queued orders.
         float currentFloor = stateMachine->lastFloor;
-        if (elevio_floorSensor() == -1){ //IDLE between floors
+
+        // Adjusts position if elevator is between floors.
+        if (elevio_floorSensor() == -1){ 
             currentFloor = currentFloor + (0.5 * stateMachine->lastDir); 
         }
+        // Emergency stop handling.
         if (elevio_stopButton()){
             if (elevio_floorSensor() == -1){
                 newState = EMERGENCY_STOP;
@@ -54,8 +58,10 @@ void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
 
             break;
         }
+        // No active orders.
         if (nextFloor == -1) break;
 
+        // Determines direction based on the next order in queue.
         if (nextFloor > currentFloor){
             setDir(stateMachine, DIRN_UP);
             newState = MOVING;
@@ -71,18 +77,22 @@ void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
         break;
     }
     case MOVING:
+        // Stops if emergency stop is pressed.
         if (elevio_stopButton()){
             newState = EMERGENCY_STOP;
             break;
         }
         int floor = elevio_floorSensor();
-        if (floor != -1 && floor == nextFloor){ //reached the desired floor
+
+        // Stops when reaching the target floor.
+        if (floor != -1 && floor == nextFloor){
             newState = DOOR_OPEN;
             startTimer(&stateMachine->timer);
         }
         break;
 
     case EMERGENCY_STOP:
+        // Stops elevator and waits until stop button is released.
         setDir(stateMachine, DIRN_STOP);
         if (!elevio_stopButton()){
             newState = IDLE;
@@ -90,17 +100,18 @@ void updateState(ElevatorStateMachine* stateMachine, int nextFloor){
         break;
 
     case DOOR_OPEN:
+        // Keeps doors open and handles obstructions or stop button presses.
         setDir(stateMachine, DIRN_STOP);
         if (elevio_stopButton()){
-            startTimer(&stateMachine->timer); //reset timer to wait 3 more secs
+            startTimer(&stateMachine->timer); // Resets timer for additional 3 sec delay
             stateMachine->shouldClearAll = 1;
             break;
         }
         
         if (elevio_obstruction()){
-            startTimer(&stateMachine->timer); //reset the timer to wait 3 more secs if obstruction sensor is high
+            startTimer(&stateMachine->timer); // Resets timer when obstruction is detected.
         }
-
+        // Closes doors after 3 seconds.
         if (getTimePassed(&stateMachine->timer) >= 3){ //3 seconds passed -> close the door
             newState = IDLE;
         }
