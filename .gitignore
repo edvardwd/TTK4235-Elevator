@@ -1,11 +1,6 @@
 .vscode/
 build/
 .DS_Store
-*.go
-*.mod
-*.js
-*.css
-*.html
 elevator
 simulator-v3
 *.zip
