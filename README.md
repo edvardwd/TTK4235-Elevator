@@ -19,7 +19,11 @@ make
 ```
 ./buildAndRun.sh
 ```
-
+after running
+```
+chmod +x buildAndRun.sh
+```
+once.
 ## How to run the simulator
 1. Open a terminal in the project folder and run
 ```
