@@ -1,5 +1,5 @@
 # TTK4235 - Embedded Systems - Elevator lab
-
+Group members: Edvard Wekre Dingsør and Havan Palo Darbandi
 ## C project to run a functioning elevator for the "Embedded Systems" course at NTNU.
 
 You can either run the project on a physical elevator at Sanntidssalen, or using a simulator.

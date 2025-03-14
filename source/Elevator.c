@@ -83,7 +83,7 @@ void updateQueue(Elevator* elevator){
             if (floor == 0 && button == BUTTON_HALL_DOWN) continue;
             if (floor == N_FLOORS - 1 && button == BUTTON_HALL_UP) continue;
 
-            if (elevio_callButton(floor, button)){
+            if (elevio_callButton(floor, button) && !elevio_stopButton()){
                 elevator->orders[floor][button] = 1;
                 *(elevator->fixedFloors[floor]) = floor;
             }
@@ -208,7 +208,6 @@ void buttonLights (Elevator* elevator){
 void elevatorMainLoop(Elevator* elevator){
     // Main operational loop handling elevator logic and state updated
     while (1){
-        //if (elevio_stopButton() && elevio_obstruction()) break; // Way to stop the simulator
         elevator->stateMachine.shouldClearAll = 0;
         updateState(&elevator->stateMachine, *elevator->queue[0]);
         updateLastFloor(&elevator->stateMachine);
