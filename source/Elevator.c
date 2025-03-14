@@ -208,7 +208,7 @@ void buttonLights (Elevator* elevator){
 void elevatorMainLoop(Elevator* elevator){
     // Main operational loop handling elevator logic and state updated
     while (1){
-        if (elevio_stopButton() && elevio_obstruction()) break; // Way to stop the simulator
+        //if (elevio_stopButton() && elevio_obstruction()) break; // Way to stop the simulator
         elevator->stateMachine.shouldClearAll = 0;
         updateState(&elevator->stateMachine, *elevator->queue[0]);
         updateLastFloor(&elevator->stateMachine);
@@ -230,7 +230,7 @@ void elevatorMainLoop(Elevator* elevator){
         default:
             break;
         }
-        //nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
+        nanosleep(&(struct timespec){0, 20*1000*1000}, NULL);
     }
 
 }
