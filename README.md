@@ -36,3 +36,14 @@ if you are using Linux or WSL, or
 if you are on MacOS.
 
 2. Follow step 2 or 3 from the physical elevator instruction.
+# Simulator buttons:
+| Floor | Hall order down | Hall order up | Cab order |
+|:-----:|:---------------:|:-------------:|:---------:|
+|   4   |       f         |               |     v     |
+|   3   |       d         |      e        |     c     |
+|   2   |       s         |      w        |     x     |
+|   1   |                 |      q        |     z     |
+
+| Stop | Obstruction |
+|:----:|:-----------:|
+|   p  |      -      |
